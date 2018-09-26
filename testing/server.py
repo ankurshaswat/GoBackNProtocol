@@ -1,7 +1,9 @@
 import socket
-from threading import *
+import time
 
+from threading import Thread
 
+## Create Server Socket and connection
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = "10.0.0.1"
 port = 8000
@@ -15,11 +17,42 @@ class client(Thread):
         self.sock = socket
         self.addr = address
         self.start()
+        
+        ## Initialize Variables
+        self.expectedSeqNum = 1
+        self.AckToSend = 1
+        self.lastpktreceived = time.time()	
+        # self.starttime = time.time()
 
     def run(self):
         while 1:
-            print('Client sent:', self.sock.recv(1024).decode())
-            self.sock.send(b'Oi you sent something to me')
+            try:
+                packet = self.sock.recv(1024).decode().split(',')
+                self.lastpktreceived = time.time()
+                ## Check Packet against expected Number
+                if(packet[0] == self.expectedSeqNum):
+                    print('Received correct', self.expectedSeqNum)
+
+                    ## Create ACK
+                    ackPacket = self.expectedSeqNum + ',' + 'ACK'
+                    
+                    ## Send ACK
+                    self.sock.send(ackPacket)
+
+                    self.expectedSeqNum += 1
+                else:
+                    print('Received incorrect ', packet[0])
+                    ## Create ACK
+                    ackPacket = self.expectedSeqNum + ',' + 'ACK'
+                    
+                    ## Send ACK
+                    self.sock.send(ackPacket)
+
+                # print('Client sent:', self.sock.recv(1024).decode())
+                # self.sock.send(b'Oi you sent something to me')
+            except:
+                if(time.time() - self.lastpktreceived > 2):
+                    break
 
 serversocket.listen(5)
 print ('server started and listening')
