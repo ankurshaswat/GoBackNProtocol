@@ -1,9 +1,11 @@
 import functools
 
-from mininet.link import TCLink
-from mininet.net import Mininet
-from mininet.node import OVSController, RemoteController
+
 from mininet.topo import Topo
+from mininet.net import Mininet
+from mininet.link import TCLink
+from mininet.node import OVSController,RemoteController
+
 
 BANDWIDTH = 10
 DELAY = '8ms'

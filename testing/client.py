@@ -6,9 +6,9 @@ import time
 
 def send_message(str):
     s.send(str.encode())
-    data = ''
-    data = s.recv(1024).decode()
-    print (data)
+    # data = ''
+    # data = s.recv(1024).decode()
+    # print (data)
 
 
 # Initialize host and port
@@ -22,10 +22,11 @@ nextSeqNum = 1
 nextAckExpected = 1
 windowSize = 7
 lastPacket = 100
+lastAckReceived=-1
 
 # Create Client Socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.settimeout(0.001)
+s.settimeout(0.1)
 
 # Connect Socket to server
 s.connect((host, port))
@@ -36,7 +37,7 @@ while not done:
     if(nextSeqNum < nextAckExpected + windowSize)and nextSeqNum <= lastPacket and not done:
 
         # Create Packet (Data is Packet Number here)
-        pkt = nextSeqNum + ',' + 'Custom Data Here'
+        pkt = str(nextSeqNum) + ',' + 'Custom Data Here'
 
         # Send Packet
         send_message(pkt)
@@ -56,7 +57,7 @@ while not done:
     except:
         if(time.time() - lastAckReceived > 0.01):
             for i in range(windowSize):
-                pkt = (i+nextAckExpected) + ',' + 'Custom Data Here'
+                pkt = str(i+nextAckExpected) + ',' + 'Custom Data Here'
                 send_message(pkt)
 
 send_message("hello there!")
