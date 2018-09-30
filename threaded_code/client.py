@@ -21,12 +21,13 @@ def network_layer():
 def physical_link_layer(socket_):
     global acks
     packetExpected = 0
-    buffer = Queue.Queue()
-
+    # buffer = Queue.Queue()
+    buffer=""
         
     while 1:
-        if not buffer.empty():
-            packet_data = buffer.get()
+        
+        if ':' in buffer:
+            packet_data,_,buffer = buffer.partition(':')
             packet = packet_data.split(',')
             print('Received packet - ' + packet_data+'\n')
             if(packet[0] == 'DATA'):
@@ -39,12 +40,10 @@ def physical_link_layer(socket_):
 
             elif(packet[0] == 'ACK'):
                 acks.put(packet[1])
-        else:
-            complete_data = socket_.recv(128).decode()
-            print('Received data - ' + complete_data + '\n')
-            msgs = complete_data.split(':')
-            for i in msgs:
-                buffer.put(i)
+        complete_data = socket_.recv(128).decode()
+        print('Received data - ' + complete_data + '\n')
+        # msgs = complete_data.split(':')
+        buffer+=complete_data
 
 def timeout_counter():
     global timer_start
