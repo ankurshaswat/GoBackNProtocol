@@ -68,7 +68,7 @@ def data_link_layer(socket_):
     while 1:
         if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize:
             data_copy = data.queue
-            data_to_send = data_copy[0]
+            data_to_send = data_copy[packet_to_send]
             packet = 'DATA,' + str(lastAckReceived+1+packet_to_send) + ',' + str(data_to_send) + ':'
             print('Sending packet (from network layer ready) - ' + packet + '\n')
             socket_.send(packet)
@@ -76,12 +76,12 @@ def data_link_layer(socket_):
             timer_start = time.time()
             # to_send = data.get()
 
-        if not acks.empty():
-            while not acks.empty():
-                ack_num = acks.get()
-                while (ack_num > lastAckReceived):
-                    data.get()
-                    lastAckReceived += 1
+        while not acks.empty():
+            ack_num = acks.get()
+            while (int(ack_num) > lastAckReceived):
+                print('Removing acknowledged data \n')
+                data.get()
+                lastAckReceived += 1
 
         if timeout:
             timeout = False
@@ -107,7 +107,7 @@ socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 s = ''
 
-if(sys.argv[3] == 0):
+if(sys.argv[3] == '0'):
     # # # Connect Socket to server
     print("Attempting to connect to" ,host)
     socket_.connect((host, port))
