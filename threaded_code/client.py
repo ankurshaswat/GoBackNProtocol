@@ -70,9 +70,9 @@ def data_link_layer(socket_):
     packet_to_send = 0
 
     while 1:
-        if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize and (packet_to_send%(lastAckReceived+1)) < data.qsize():
+        if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize and (packet_to_send - lastAckReceived - 1) < data.qsize():
             data_copy = data.queue
-            data_to_send = data_copy[packet_to_send % (lastAckReceived+1)]
+            data_to_send = data_copy[packet_to_send - lastAckReceived - 1]
             packet = 'DATA,' + str(packet_to_send) + \
                 ',NORMAL' + str(data_to_send) + ':'
             print('Sending packet (from network layer ready) - ' + packet + '\n')
