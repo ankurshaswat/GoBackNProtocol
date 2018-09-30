@@ -10,14 +10,14 @@ import random
 class Frame:
     def __init__(self, type, num, data):
         self.type = type
-        self.num = num
+        self.num = str(num)
         self.data = data
         if (data == None):
             # if(type == 'ACK'):
-            left_space = 32 - (3 + 2 + len(num)) - 1
+            left_space = 32 - (3 + 2 + len(self.num)) - 1
             self.data = '_' * left_space
         else:
-            left_space = 32 - (4 + 3 + len(num)) - 1
+            left_space = 32 - (4 + 3 + len(self.num)) - 1
             self.data += ',' + ('_'*left_space)
 
     def toString(self):
@@ -33,6 +33,9 @@ total_packets_send = 500
 total_packets_receive = 500
 lastAckReceived = -1
 packetExpected = 0
+
+packetsSent = 0
+packetsReceived = 0
 
 START_TIME = time.time()
 DATA_ERROR_PROB = 0.1
@@ -68,6 +71,7 @@ def physical_link_layer(socket_):
     global total_packets_send
     global packetExpected
     global lastAckReceived
+    global packetsReceived
     buffer = ""
 
     while 1:
@@ -80,6 +84,7 @@ def physical_link_layer(socket_):
                 # Check for error
                 if(not checksum(packet)):
                     continue
+                packetsReceived += 1
 
                 packet_num = packet[1]
                 if(packetExpected == int(packet_num)):
@@ -90,6 +95,7 @@ def physical_link_layer(socket_):
                     if(packetExpected == 400):
                         print('Time for 400 packets- ' +
                               str(time.time()-START_TIME)+'\n')
+                        print('Total Packets Received Till Now - '+packetsReceived+'\n')
                     packetExpected += 1
                 elif(packetExpected != 0):
                     sending = Frame('ACK', packetExpected-1, None)
@@ -135,6 +141,7 @@ def data_link_layer(socket_):
     global total_packets_send
     global total_packets_receive
     global packetExpected
+    global packetsSent
 
     windowSize = 7
     packet_to_send = 0
@@ -147,11 +154,15 @@ def data_link_layer(socket_):
             print('Sending packet (from network layer ready) - ' +
                   packet.toString() + '\n')
             socket_.send(packet.toString())
+            packetsSent += 1
+
             packet_to_send += 1
             timer_start = time.time()
             # to_send = data.get()
 
         while not acks.empty():
+            if(lastAckReceived == 400):
+                print('Packets Sent to get this Ack - '+packetsSent+'\n')
             ack_num = acks.get()
             while (lastAckReceived < int(ack_num)):
                 dat = data.get()
