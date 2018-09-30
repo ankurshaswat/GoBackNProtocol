@@ -87,6 +87,7 @@ def data_link_layer(socket_):
                 packet = 'DATA,'+str(lastAckReceived+1+i) + ',' + str(data_to_send)
                 print('Sending Packet (timeout) - ',packet)
                 socket_.send(packet)
+            timer_start = time.time()
 
 
 # # # Initialize host and port
