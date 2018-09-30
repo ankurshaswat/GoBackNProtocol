@@ -4,36 +4,37 @@ import socket
 import sys
 from threading import Thread
 
-print('Initializing Variables')
+print('Initializing Variables\n')
 data = Queue.Queue()
 acks = Queue.Queue()
 timer_start = time.time()
 timeout = False
-total_packets = 500
+total_packets_send = 500
+total_packets_receive = 500
 lastAckReceived = -1
 packetExpected = 0
 
 def network_layer():
     global data
-    global total_packets
+    global total_packets_send
 
-    for i in range(total_packets):
+    for i in range(total_packets_send):
         time.sleep(0.002)
         data.put("____CUSTOM_DATA____-"+str(i))
-    print('Stopping Netowrk Layer - No more data to send to queue')            
+    print('Stopping Netowrk Layer - No more data to send to queue\n')            
     
 
 
 def physical_link_layer(socket_):
     global acks
-    global total_packets
+    global total_packets_receive
+    global total_packets_send
     global packetExpected
     global lastAckReceived
     # buffer = Queue.Queue()
     buffer = ""
 
     while 1:
-
         while ':' in buffer:
             packet_data, _, buffer = buffer.partition(':')
             packet = packet_data.split(',')
@@ -52,26 +53,26 @@ def physical_link_layer(socket_):
 
             elif(packet[0] == 'ACK'):
                 acks.put(packet[1])
-        complete_data = socket_.recv(128).decode()
-        # print('Received data - ' + complete_data + '\n')
-        buffer += complete_data
 
-        if(packetExpected == total_packets and lastAckReceived == total_packets - 1):
-            print('Stopping Physical Link Layer')
-            break
-
+        try:
+            complete_data = socket_.recv(128).decode()
+            buffer += complete_data
+        except:
+            if (packetExpected == total_packets_receive and lastAckReceived == total_packets_send - 1):
+                print('Stopping Physical Link Layer\n')
+                break
 
 def timeout_counter():
     global timer_start
     global timeout
-    global total_packets
+    global total_packets_send
     global lastAckReceived
 
     while 1:
         if(time.time() - timer_start > 0.5):
             timeout = True
-        if(lastAckReceived == total_packets-1):
-            print('Stopping Timeoout Counter')
+        if(lastAckReceived == total_packets_send-1):
+            print('Stopping Timeoout Counter\n')
             break
 
 
@@ -81,7 +82,8 @@ def data_link_layer(socket_):
     global data
     global acks
     global lastAckReceived
-    global total_packets
+    global total_packets_send
+    global total_packets_receive
     global packetExpected
 
     windowSize = 7
@@ -120,8 +122,8 @@ def data_link_layer(socket_):
                 socket_.send(packet)
             timer_start = time.time()
 
-        if(packetExpected == total_packets and lastAckReceived == total_packets - 1):
-            print('Stopping Data Link Layer')            
+        if(packetExpected == total_packets_receive and lastAckReceived == total_packets_send - 1):
+            print('Stopping Data Link Layer\n')            
             break
 
 
@@ -131,7 +133,7 @@ port = int(sys.argv[2])  # port
 
 # # Create Client Socket
 socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s.settimeout(0.1)
+socket_.settimeout(1)
 
 s = ''
 
@@ -155,20 +157,22 @@ thread2 = Thread(target=physical_link_layer, args=(s,))
 thread3 = Thread(target=timeout_counter, args=())
 thread4 = Thread(target=data_link_layer, args=(s,))
 
-thread1.daemon = True
-thread2.daemon = True
-thread3.daemon = True
-thread4.daemon = True
+# thread1.daemon = True
+# thread2.daemon = True
+# thread3.daemon = True
+# thread4.daemon = True
 
 thread1.start()
 thread2.start()
 thread3.start()
 thread4.start()
 
-# thread1.join()
-# thread2.join()
-# thread3.join()
-# thread4.join()
+thread1.join()
+thread2.join()
+thread3.join()
+thread4.join()
 
-while True:
-    time.sleep(1)
+socket_.close()
+
+# while True:
+#     time.sleep(1)
