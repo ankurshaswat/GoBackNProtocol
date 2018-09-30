@@ -43,5 +43,6 @@ if __name__ == '__main__':
     hosts = net.hosts
     print(hosts[0].cmd('ping -c1 %s' % hosts[1].IP()))
     print(hosts[1].cmd('ping -c1 %s' % hosts[0].IP()))
-    print(hosts[0].cmd('python server.py &'))
+    hosts[0].cmd('python server.py &')
+    print("Starting client program")
     print(hosts[1].cmd('python client.py'))

@@ -16,43 +16,50 @@ class client(Thread):
         Thread.__init__(self)
         self.sock = socket
         self.addr = address
-        self.start()
         
         ## Initialize Variables
         self.expectedSeqNum = 1
         self.AckToSend = 1
         self.lastpktreceived = time.time()	
-        # self.starttime = time.time()
+
+        self.start()
 
     def run(self):
         while 1:
-            try:
-                packet = self.sock.recv(1024).decode().split(',')
-                self.lastpktreceived = time.time()
-                ## Check Packet against expected Number
-                if(packet[0] == self.expectedSeqNum):
-                    print('Received correct', self.expectedSeqNum)
+            s=self.sock.recv(1024).decode()
+            print('Client sent:', s)
+            self.sock.send(b'Oi you sent something to me- '+s.encode()) 
 
-                    ## Create ACK
-                    ackPacket = self.expectedSeqNum + ',' + 'ACK'
+
+    # def run(self):
+    #     while 1:
+    #         try:
+    #             packet = self.sock.recv(1024).decode().split(',')
+    #             self.lastpktreceived = time.time()
+    #             ## Check Packet against expected Number
+    #             if(packet[0] == self.expectedSeqNum):
+    #                 print('Received correct', self.expectedSeqNum)
+
+    #                 ## Create ACK
+    #                 ackPacket = self.expectedSeqNum + ',' + 'ACK'
                     
-                    ## Send ACK
-                    self.sock.send(ackPacket)
+    #                 ## Send ACK
+    #                 self.sock.send(ackPacket)
 
-                    self.expectedSeqNum += 1
-                else:
-                    print('Received incorrect ', packet[0])
-                    ## Create ACK
-                    ackPacket = self.expectedSeqNum + ',' + 'ACK'
+    #                 self.expectedSeqNum += 1
+    #             else:
+    #                 print('Received incorrect ', packet[0])
+    #                 ## Create ACK
+    #                 ackPacket = self.expectedSeqNum + ',' + 'ACK'
                     
-                    ## Send ACK
-                    self.sock.send(ackPacket)
+    #                 ## Send ACK
+    #                 self.sock.send(ackPacket)
 
-                # print('Client sent:', self.sock.recv(1024).decode())
-                # self.sock.send(b'Oi you sent something to me')
-            except:
-                if(time.time() - self.lastpktreceived > 2):
-                    break
+    #             # print('Client sent:', self.sock.recv(1024).decode())
+    #             # self.sock.send(b'Oi you sent something to me')
+    #         except:
+    #             if(time.time() - self.lastpktreceived > 2):
+    #                 break
 
 serversocket.listen(5)
 print ('server started and listening')
