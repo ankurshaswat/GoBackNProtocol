@@ -32,17 +32,20 @@ def physical_link_layer(socket_):
             print('Received packet - ' + packet_data+'\n')
             if(packet[0] == 'DATA'):
                 packet_num = packet[1]
-                sending = 'ACK,'+str(packetExpected) + ':'
-                print('Sending packet (from physical link layer) - '+sending+'\n')
-                socket_.send(sending)
                 if(packetExpected == int(packet_num)):
+                    sending = 'ACK,'+str(packetExpected) + ':'
+                    print('Sending packet (from physical link layer) - '+sending+'\n')
+                    socket_.send(sending)
                     packetExpected += 1
+                elif(packetExpected != 0):
+                    sending = 'ACK,'+str(packetExpected-1) + ':'
+                    print('Sending packet (from physical link layer) - '+sending+'\n')
+                    socket_.send(sending)
 
             elif(packet[0] == 'ACK'):
                 acks.put(packet[1])
         complete_data = socket_.recv(128).decode()
         print('Received data - ' + complete_data + '\n')
-        # msgs = complete_data.split(':')
         buffer+=complete_data
 
 def timeout_counter():
