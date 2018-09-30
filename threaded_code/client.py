@@ -68,7 +68,7 @@ def data_link_layer(socket_):
     packet_to_send = 0
 
     while 1:
-        if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize:
+        if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize and packet_to_send < data.qsize():
             data_copy = data.queue
             data_to_send = data_copy[packet_to_send]
             packet = 'DATA,' + str(lastAckReceived+1+packet_to_send) + ',' + str(data_to_send) + ':'
