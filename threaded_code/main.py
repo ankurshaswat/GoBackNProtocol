@@ -6,10 +6,13 @@ from mininet.net import Mininet
 from mininet.link import TCLink
 from mininet.node import OVSController,RemoteController
 
+import time
+from threading import Thread
+
 
 BANDWIDTH = 10
 DELAY = '8ms'
-LOSS = 2
+LOSS = 0
 MAX_QUEUE_SIZE = 1000
 
 
@@ -29,8 +32,19 @@ class LinearTopo(Topo):
         switch2 = self.addSwitch('s2')
         self.addLink(host1, switch1)
         self.addLink(host2, switch2)
-        self.addLink(switch1, switch2, bw=BANDWIDTH, delay=DELAY,
-                     loss=LOSS, max_queue_size=MAX_QUEUE_SIZE)
+        # self.addLink(switch1, switch2, bw=BANDWIDTH, delay=DELAY,
+        #              loss=LOSS, max_queue_size=MAX_QUEUE_SIZE)
+        self.addLink(switch1,switch2)
+
+def init_client1(hosts):
+    print("Starting server program \n")    
+    hosts[0].cmd('python client.py 0.0.0.0 9007 1 > server.log')
+
+def init_client2(hosts):
+    print("Starting client program \n")    
+    hosts[1].cmd('python client.py 10.0.0.1 9007 0 > client.log')    
+
+
 
 
 if __name__ == '__main__':
@@ -43,7 +57,24 @@ if __name__ == '__main__':
     hosts = net.hosts
     print(hosts[0].cmd('ping -c1 %s' % hosts[1].IP()))
     print(hosts[1].cmd('ping -c1 %s' % hosts[0].IP()))
-    print("Starting server program")
-    hosts[0].cmd('python server.py &')
-    print("Starting client program")
-    print(hosts[1].cmd('python client.py'))
+    print(hosts[0].cmd('ifconfig'))
+    # print("Starting server program")
+    # print(hosts[0].cmd('python client.py 0.0.0.0 9007 1 &'))
+    print(hosts[1].cmd('ifconfig'))    
+    # time.sleep(2)
+    # print("Starting client program")
+    # print(hosts[1].cmd('python client.py 10.0.0.1 9007 0'))
+    thread1 = Thread(target=init_client1, args=(hosts,))
+    thread2 = Thread(target=init_client2, args=(hosts,))
+
+    thread1.daemon = True
+    thread2.daemon = True
+
+    thread1.start()
+    time.sleep(2)
+    thread2.start()
+
+    print("Started both threads\n")
+
+    while True:
+        time.sleep(1)
