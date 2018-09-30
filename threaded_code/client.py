@@ -34,13 +34,14 @@ def physical_link_layer(socket_):
                 sending = 'ACK,'+str(packetExpected) + ':'
                 print('Sending packet (from physical link layer) - '+sending+'\n')
                 socket_.send(sending)
-                if(packetExpected == packet_num):
+                if(packetExpected == int(packet_num)):
                     packetExpected += 1
 
             elif(packet[0] == 'ACK'):
                 acks.put(packet[1])
         else:
-            complete_data = socket_.recv().decode()
+            complete_data = socket_.recv(128).decode()
+            print('Received data - ' + complete_data + '\n')
             msgs = complete_data.split(':')
             for i in msgs:
                 buffer.put(i)
@@ -101,24 +102,45 @@ host=sys.argv[1]  # IP of other client(server)
 port =int(sys.argv[2]) # port
 
 # # Create Client Socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # s.settimeout(0.1)
 
-# # # Connect Socket to server
-print("Attempting to connect to" ,host)
-s.connect((host, port))
+s = ''
+
+if(sys.argv[3] == 0):
+    # # # Connect Socket to server
+    print("Attempting to connect to" ,host)
+    socket_.connect((host, port))
+    s = socket_
+else:
+    # # # Bind to port
+    socket_.bind((host, port))
+
+    # Que up to 2 request
+    socket_.listen(2)
+
+    # Accept connection
+    s, address = socket_.accept()
 
 thread1 = Thread( target=network_layer, args=() )
 thread2 = Thread( target=physical_link_layer, args=(s,) )
 thread3 = Thread( target=timeout_counter, args=() )
 thread4 = Thread( target=data_link_layer, args=(s,) )
 
+thread1.daemon=True
+thread2.daemon=True
+thread3.daemon=True
+thread4.daemon=True
+
 thread1.start()
 thread2.start()
 thread3.start()
 thread4.start()
 
-thread1.join()
-thread2.join()
-thread3.join()
-thread4.join()
+# thread1.join()
+# thread2.join()
+# thread3.join()
+# thread4.join()
+
+while True:
+    time.sleep(1)
