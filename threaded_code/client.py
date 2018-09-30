@@ -1,9 +1,8 @@
 import Queue
 import time
 import socket
-from threading import Thread
-
 import sys
+from threading import Thread
 
 print('Initializing Variables')
 data = Queue.Queue()
@@ -22,22 +21,29 @@ def network_layer():
 def physical_link_layer(socket_):
     global acks
     packetExpected = 0
+    buffer = Queue.Queue()
 
+        
     while 1:
-        packet_data = socket_.recv(1024).decode()
-        packet = packet_data.split(',')
-        print('Received packet - ' + packet_data+'\n')
-        if(packet[0] == 'DATA'):
-            packet_num = packet[1]
-            sending = 'ACK,'+str(packetExpected)
-            print('Sending packet (from physical link layer) - '+sending+'\n')
-            socket_.send(sending)
-            if(packetExpected == packet_num):
-                packetExpected += 1
+        if not buffer.empty():
+            packet_data = buffer.get()
+            packet = packet_data.split(',')
+            print('Received packet - ' + packet_data+'\n')
+            if(packet[0] == 'DATA'):
+                packet_num = packet[1]
+                sending = 'ACK,'+str(packetExpected) + ':'
+                print('Sending packet (from physical link layer) - '+sending+'\n')
+                socket_.send(sending)
+                if(packetExpected == packet_num):
+                    packetExpected += 1
 
-        elif(packet[0] == 'ACK'):
-            acks.put(packet[1])
-
+            elif(packet[0] == 'ACK'):
+                acks.put(packet[1])
+        else:
+            complete_data = socket_.recv().decode()
+            msgs = complete_data.split(':')
+            for i in msgs:
+                buffer.put(i)
 
 def timeout_counter():
     global timer_start
@@ -62,7 +68,7 @@ def data_link_layer(socket_):
         if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize:
             data_copy = data.queue
             data_to_send = data_copy[0]
-            packet = 'DATA,' + str(lastAckReceived+1+packet_to_send) + ',' + str(data_to_send)
+            packet = 'DATA,' + str(lastAckReceived+1+packet_to_send) + ',' + str(data_to_send) + ':'
             print('Sending packet (from network layer ready) - ' + packet + '\n')
             socket_.send(packet)
             packet_to_send += 1
@@ -84,7 +90,7 @@ def data_link_layer(socket_):
                 if(i >= len(data_copy)):
                     break
                 data_to_send = data_copy[i]
-                packet = 'DATA,'+str(lastAckReceived+1+i) + ',' + str(data_to_send)
+                packet = 'DATA,'+str(lastAckReceived+1+i) + ',' + str(data_to_send) + ':'
                 print('Sending Packet (timeout) - ' + packet + '\n')
                 socket_.send(packet)
             timer_start = time.time()
