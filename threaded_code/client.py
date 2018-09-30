@@ -2,7 +2,24 @@ import Queue
 import time
 import socket
 import sys
+import random
 from threading import Thread
+
+class Frame:
+    def __init__(self,type,num,data):
+        self.type = type
+        self.num = num
+        self.data = data
+        if (data == None):
+            # if(type == 'ACK'):
+            left_space = 32 - (3 + 2 + len(num)) - 1
+            self.data = '_' * left_space
+        else:
+            left_space = 32 - (4 + 3 + len(num)) - 1
+            self.data += ','+ ('_'*left_space)
+    
+    def toString(self):
+        return (self.type+','+self.num+','+self.data+':')
 
 print('Initializing Variables\n')
 data = Queue.Queue()
@@ -20,7 +37,8 @@ def network_layer():
 
     for i in range(total_packets_send):
         time.sleep(0.002)
-        data.put("____CUSTOM_DATA____-"+str(i))
+        data_size = random.randint(32,222)
+        data.put('_'*data_size)
     print('Stopping Netowrk Layer - No more data to send to queue\n')            
     
 
@@ -42,12 +60,12 @@ def physical_link_layer(socket_):
             if(packet[0] == 'DATA'):
                 packet_num = packet[1]
                 if(packetExpected == int(packet_num)):
-                    sending = 'ACK,'+str(packetExpected) + ':'
-                    print('Sending packet (from physical link layer) - '+sending+'\n')
-                    socket_.send(sending)
+                    sending = Frame('ACK',packetExpected,None)
+                    print('Sending packet (from physical link layer) - '+sending.toString()+'\n')
+                    socket_.send(sending.toString())
                     packetExpected += 1
                 elif(packetExpected != 0):
-                    sending = 'ACK,'+str(packetExpected-1) + ':'
+                    sending = Frame('ACK',packetExpected-1,None)
                     print('Sending packet (from physical link layer) - '+sending+'\n')
                     socket_.send(sending)
 
@@ -93,10 +111,9 @@ def data_link_layer(socket_):
         if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize and (packet_to_send - lastAckReceived - 1) < data.qsize():
             data_copy = data.queue
             data_to_send = data_copy[packet_to_send - lastAckReceived - 1]
-            packet = 'DATA,' + str(packet_to_send) + \
-                ',NORMAL' + str(data_to_send) + ':'
-            print('Sending packet (from network layer ready) - ' + packet + '\n')
-            socket_.send(packet)
+            packet = Frame('DATA',packet_to_send,data_to_send)
+            print('Sending packet (from network layer ready) - ' + packet.toString() + '\n')
+            socket_.send(packet.toString())
             packet_to_send += 1
             timer_start = time.time()
             # to_send = data.get()
@@ -116,10 +133,9 @@ def data_link_layer(socket_):
                 if(i >= len(data_copy)):
                     break
                 data_to_send = data_copy[i]
-                packet = 'DATA,'+str(lastAckReceived+1+i) + \
-                    ',TIMEOUT_' + str(data_to_send) + ':'
-                print('Sending Packet (timeout) - ' + packet + '\n')
-                socket_.send(packet)
+                packet = Frame('DATA',lastAckReceived+1+i,data_to_send)
+                print('Sending Packet (timeout) - ' + packet.toString() + '\n')
+                socket_.send(packet.toString())
             timer_start = time.time()
 
         if(packetExpected == total_packets_receive and lastAckReceived == total_packets_send - 1):
