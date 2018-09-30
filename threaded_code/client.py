@@ -9,19 +9,23 @@ data = Queue.Queue()
 acks = Queue.Queue()
 timer_start = time.time()
 timeout = False
-
+total_packets = 500
+lastAckReceived = -1
+packetExpected = 0
 
 def network_layer():
     global data
+    global total_packets
 
-    for i in range(500):
+    for i in range(total_packets):
         time.sleep(0.002)
         data.put("____CUSTOM_DATA____-"+str(i))
 
 
 def physical_link_layer(socket_):
     global acks
-    packetExpected = 0
+    global total_packets
+    global packetExpected
     # buffer = Queue.Queue()
     buffer = ""
 
@@ -49,14 +53,21 @@ def physical_link_layer(socket_):
         # print('Received data - ' + complete_data + '\n')
         buffer += complete_data
 
+        if(packetExpected == total_packets):
+            break
+
 
 def timeout_counter():
     global timer_start
     global timeout
+    global total_packets
+    global lastAckReceived
 
     while 1:
         if(time.time() - timer_start > 0.5):
             timeout = True
+        if(lastAckReceived == total_packets-1):
+            break
 
 
 def data_link_layer(socket_):
@@ -64,9 +75,11 @@ def data_link_layer(socket_):
     global timeout
     global data
     global acks
+    global lastAckReceived
+    global total_packets
+    global packetExpected
 
     windowSize = 7
-    lastAckReceived = -1
     packet_to_send = 0
 
     while 1:
@@ -101,6 +114,9 @@ def data_link_layer(socket_):
                 print('Sending Packet (timeout) - ' + packet + '\n')
                 socket_.send(packet)
             timer_start = time.time()
+
+        if(packetExpected == total_packets and lastAckReceived == total_packets - 1):
+            break
 
 
 # # # Initialize host and port
