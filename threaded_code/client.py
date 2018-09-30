@@ -20,12 +20,15 @@ def network_layer():
     for i in range(total_packets):
         time.sleep(0.002)
         data.put("____CUSTOM_DATA____-"+str(i))
+    print('Stopping Netowrk Layer - No more data to send to queue')            
+    
 
 
 def physical_link_layer(socket_):
     global acks
     global total_packets
     global packetExpected
+    global lastAckReceived
     # buffer = Queue.Queue()
     buffer = ""
 
@@ -53,7 +56,8 @@ def physical_link_layer(socket_):
         # print('Received data - ' + complete_data + '\n')
         buffer += complete_data
 
-        if(packetExpected == total_packets):
+        if(packetExpected == total_packets and lastAckReceived == total_packets - 1):
+            print('Stopping Physical Link Layer')
             break
 
 
@@ -67,6 +71,7 @@ def timeout_counter():
         if(time.time() - timer_start > 0.5):
             timeout = True
         if(lastAckReceived == total_packets-1):
+            print('Stopping Timeoout Counter')
             break
 
 
@@ -116,6 +121,7 @@ def data_link_layer(socket_):
             timer_start = time.time()
 
         if(packetExpected == total_packets and lastAckReceived == total_packets - 1):
+            print('Stopping Data Link Layer')            
             break
 
 
