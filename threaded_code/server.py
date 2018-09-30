@@ -86,20 +86,28 @@ def data_link_layer(socket_):
 
 
 # # # Initialize host and port
-host=sys.argv[1]  # IP of other client(server)
+# host = "10.0.0.1"
+host=sys.argv[1]  # server IP (127.0.0.1)
 port =sys.argv[2] # port
 
-# # Create Client Socket
+# # Create Server Socket (listener) 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.settimeout(0.1)
 
-# # # Connect Socket to server
-s.connect((host, port))
+# # # Bind to port
+s.bind((host, port))
+
+# Que up to 2 request
+s.listen(2)
+
+# Accept connection
+clientsocket, address = s.accept()
+  
 
 thread1 = Thread( target=network_layer, args=() )
-thread2 = Thread( target=physical_link_layer, args=(s) )
+thread2 = Thread( target=physical_link_layer, args=(clientsocket) )
 thread3 = Thread( target=timeout_counter, args=() )
-thread4 = Thread( target=data_link_layer, args=(s) )
+thread4 = Thread( target=data_link_layer, args=(clientsocket) )
 
 thread1.start()
 thread2.start()
