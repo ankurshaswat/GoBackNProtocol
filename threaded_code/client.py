@@ -26,11 +26,11 @@ def physical_link_layer(socket_):
     while 1:
         packet_data = socket_.recv(1024).decode()
         packet = packet_data.split(',')
-        print('Received packet - ', packet_data)
+        print('Received packet - ' + packet_data+'\n')
         if(packet[0] == 'DATA'):
             packet_num = packet[1]
             sending = 'ACK,'+str(packetExpected)
-            print('Sending packet (from physical link layer) - ',sending)
+            print('Sending packet (from physical link layer) - '+sending+'\n')
             socket_.send(sending)
             if(packetExpected == packet_num):
                 packetExpected += 1
@@ -63,7 +63,7 @@ def data_link_layer(socket_):
             data_copy = data.queue
             data_to_send = data_copy[0]
             packet = 'DATA,' + str(lastAckReceived+1+packet_to_send) + ',' + str(data_to_send)
-            print('Sending packet (from network layer ready) - ',packet)
+            print('Sending packet (from network layer ready) - ' + packet + '\n')
             socket_.send(packet)
             packet_to_send += 1
             timer_start = time.time()
@@ -85,7 +85,7 @@ def data_link_layer(socket_):
                     break
                 data_to_send = data_copy[i]
                 packet = 'DATA,'+str(lastAckReceived+1+i) + ',' + str(data_to_send)
-                print('Sending Packet (timeout) - ',packet)
+                print('Sending Packet (timeout) - ' + packet + '\n')
                 socket_.send(packet)
             timer_start = time.time()
 
