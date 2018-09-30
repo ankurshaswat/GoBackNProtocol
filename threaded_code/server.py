@@ -10,7 +10,6 @@ data = Queue.Queue()
 acks = Queue.Queue()
 timer_start = time.time()
 timeout = False
-
 def network_layer():
     global data
 
@@ -24,17 +23,18 @@ def physical_link_layer(socket_):
     packetExpected = 0
 
     while 1:
-        packet = socket_.recv(1024).decode().split(',')
-
+        packet_data = socket_.recv(1024).decode()
+        packet = packet_data.split(',')
+        print('Received packet - ', packet_data)
         if(packet[0] == 'DATA'):
-            print('Received DATA - ', packet[2])
             packet_num = packet[1]
-            socket_.send('ACK,'+packetExpected)
+            sending = 'ACK,'+str(packetExpected)
+            print('Sending packet (from physical link layer) - ',sending)
+            socket_.send(sending)
             if(packetExpected == packet_num):
                 packetExpected += 1
 
         elif(packet[0] == 'ACK'):
-            print('Received ACK - ',packet[1])
             acks.put(packet[1])
 
 
@@ -61,7 +61,9 @@ def data_link_layer(socket_):
         if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize:
             data_copy = data.queue
             data_to_send = data_copy[0]
-            packet = 'DATA,' + (lastAckReceived+1+packet_to_send) + ',' + data_to_send
+            packet = 'DATA,' + str(lastAckReceived+1+packet_to_send) + ',' + str(data_to_send)
+            print('Sending packet (from network layer ready) - ',packet)
+            socket_.send(packet)
             packet_to_send += 1
             timer_start = time.time()
             # to_send = data.get()
@@ -81,9 +83,9 @@ def data_link_layer(socket_):
                 if(i >= len(data_copy)):
                     break
                 data_to_send = data_copy[i]
-                packet = 'DATA,'+(lastAckReceived+1+i) + ',' + data_to_send
+                packet = 'DATA,'+str(lastAckReceived+1+i) + ',' + str(data_to_send)
+                print('Sending Packet (timeout) - ',packet)
                 socket_.send(packet)
-
 
 # # # Initialize host and port
 # host = "10.0.0.1"
