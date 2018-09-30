@@ -3,6 +3,7 @@ import time
 import socket
 import sys
 from threading import Thread
+import random
 
 print('Initializing Variables\n')
 data = Queue.Queue()
@@ -14,15 +15,30 @@ total_packets_receive = 500
 lastAckReceived = -1
 packetExpected = 0
 
+START_TIME=time.time()
+DATA_ERROR_PROB=0.1
+ACK_ERROR_PROB=0.05
+
 def network_layer():
     global data
     global total_packets_send
 
     for i in range(total_packets_send):
-        time.sleep(0.002)
+        time.sleep(0.0025)
         data.put("____CUSTOM_DATA____-"+str(i))
     print('Stopping Netowrk Layer - No more data to send to queue\n')            
     
+
+def checksum(packet):
+    x=random.uniform(0,1)
+    if(packet[0]=='DATA'):
+        if(x<DATA_ERROR_PROB):
+            return False
+    else:
+        if(x<ACK_ERROR_PROB):
+            return False
+    
+    return True
 
 
 def physical_link_layer(socket_):
@@ -31,7 +47,6 @@ def physical_link_layer(socket_):
     global total_packets_send
     global packetExpected
     global lastAckReceived
-    # buffer = Queue.Queue()
     buffer = ""
 
     while 1:
@@ -39,12 +54,19 @@ def physical_link_layer(socket_):
             packet_data, _, buffer = buffer.partition(':')
             packet = packet_data.split(',')
             print('Received packet - ' + packet_data+'\n')
+
             if(packet[0] == 'DATA'):
+                #Check for error                                
+                if(not checksum(packet)):
+                     continue
+
                 packet_num = packet[1]
                 if(packetExpected == int(packet_num)):
                     sending = 'ACK,'+str(packetExpected) + ':'
                     print('Sending packet (from physical link layer) - '+sending+'\n')
                     socket_.send(sending)
+                    if(packetExpected==400):
+                        print('Time for 400 packets- '+str(time.time()-START_TIME)+'\n')
                     packetExpected += 1
                 elif(packetExpected != 0):
                     sending = 'ACK,'+str(packetExpected-1) + ':'
@@ -52,6 +74,9 @@ def physical_link_layer(socket_):
                     socket_.send(sending)
 
             elif(packet[0] == 'ACK'):
+                #Check for error                                
+                if(not checksum(packet)):
+                     continue
                 acks.put(packet[1])
 
         try:
@@ -133,7 +158,7 @@ port = int(sys.argv[2])  # port
 
 # # Create Client Socket
 socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-socket_.settimeout(1)
+socket_.settimeout(10)
 
 s = ''
 
