@@ -8,13 +8,11 @@ from mininet.node import OVSController,RemoteController
 
 import time
 from threading import Thread
+import random
 
-
-BANDWIDTH = 10
-DELAY = '8ms'
-LOSS = 0
-MAX_QUEUE_SIZE = 1000
-
+BANDWIDTH = 1
+DELAY = str(random.randint(0,5))+'ms'
+print('Delay set to '+DELAY)
 
 class LinearTopo(Topo):
 
@@ -32,8 +30,7 @@ class LinearTopo(Topo):
         switch2 = self.addSwitch('s2')
         self.addLink(host1, switch1)
         self.addLink(host2, switch2)
-        # self.addLink(switch1, switch2, bw=BANDWIDTH, delay=DELAY,
-        #              loss=LOSS, max_queue_size=MAX_QUEUE_SIZE)
+        self.addLink(switch1, switch2, bw=BANDWIDTH, delay=DELAY)
         self.addLink(switch1,switch2)
 
 def init_client1(hosts):
