@@ -10,6 +10,7 @@ acks = Queue.Queue()
 timer_start = time.time()
 timeout = False
 
+
 def network_layer():
     global data
 
@@ -22,12 +23,12 @@ def physical_link_layer(socket_):
     global acks
     packetExpected = 0
     # buffer = Queue.Queue()
-    buffer=""
-        
+    buffer = ""
+
     while 1:
-        
+
         while ':' in buffer:
-            packet_data,_,buffer = buffer.partition(':')
+            packet_data, _, buffer = buffer.partition(':')
             packet = packet_data.split(',')
             print('Received packet - ' + packet_data+'\n')
             if(packet[0] == 'DATA'):
@@ -46,14 +47,15 @@ def physical_link_layer(socket_):
                 acks.put(packet[1])
         complete_data = socket_.recv(128).decode()
         # print('Received data - ' + complete_data + '\n')
-        buffer+=complete_data
+        buffer += complete_data
+
 
 def timeout_counter():
     global timer_start
     global timeout
 
     while 1:
-        if(time.time() - timer_start > 0.1):
+        if(time.time() - timer_start > 0.5):
             timeout = True
 
 
@@ -68,10 +70,11 @@ def data_link_layer(socket_):
     packet_to_send = 0
 
     while 1:
-        if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize and packet_to_send < data.qsize():
+        if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize and (packet_to_send%(lastAckReceived+1)) < data.qsize():
             data_copy = data.queue
-            data_to_send = data_copy[packet_to_send]
-            packet = 'DATA,' + str(lastAckReceived+1+packet_to_send) + ',NORMAL' + str(data_to_send) + ':'
+            data_to_send = data_copy[packet_to_send % (lastAckReceived+1)]
+            packet = 'DATA,' + str(packet_to_send) + \
+                ',NORMAL' + str(data_to_send) + ':'
             print('Sending packet (from network layer ready) - ' + packet + '\n')
             socket_.send(packet)
             packet_to_send += 1
@@ -80,9 +83,9 @@ def data_link_layer(socket_):
 
         while not acks.empty():
             ack_num = acks.get()
-            while (int(ack_num) > lastAckReceived):
-                print('Removing acknowledged data \n')
-                data.get()
+            while (lastAckReceived < int(ack_num)):
+                dat = data.get()
+                print('Removing acknowledged data' + dat + '\n')
                 lastAckReceived += 1
 
         if timeout:
@@ -93,15 +96,16 @@ def data_link_layer(socket_):
                 if(i >= len(data_copy)):
                     break
                 data_to_send = data_copy[i]
-                packet = 'DATA,'+str(lastAckReceived+1+i) + ',TIMEOUT_' + str(data_to_send) + ':'
+                packet = 'DATA,'+str(lastAckReceived+1+i) + \
+                    ',TIMEOUT_' + str(data_to_send) + ':'
                 print('Sending Packet (timeout) - ' + packet + '\n')
                 socket_.send(packet)
             timer_start = time.time()
 
 
 # # # Initialize host and port
-host=sys.argv[1]  # IP of other client(server)
-port =int(sys.argv[2]) # port
+host = sys.argv[1]  # IP of other client(server)
+port = int(sys.argv[2])  # port
 
 # # Create Client Socket
 socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -111,7 +115,7 @@ s = ''
 
 if(sys.argv[3] == '0'):
     # # # Connect Socket to server
-    print("Attempting to connect to" ,host)
+    print("Attempting to connect to", host)
     socket_.connect((host, port))
     s = socket_
 else:
@@ -124,15 +128,15 @@ else:
     # Accept connection
     s, address = socket_.accept()
 
-thread1 = Thread( target=network_layer, args=() )
-thread2 = Thread( target=physical_link_layer, args=(s,) )
-thread3 = Thread( target=timeout_counter, args=() )
-thread4 = Thread( target=data_link_layer, args=(s,) )
+thread1 = Thread(target=network_layer, args=())
+thread2 = Thread(target=physical_link_layer, args=(s,))
+thread3 = Thread(target=timeout_counter, args=())
+thread4 = Thread(target=data_link_layer, args=(s,))
 
-thread1.daemon=True
-thread2.daemon=True
-thread3.daemon=True
-thread4.daemon=True
+thread1.daemon = True
+thread2.daemon = True
+thread3.daemon = True
+thread4.daemon = True
 
 thread1.start()
 thread2.start()
