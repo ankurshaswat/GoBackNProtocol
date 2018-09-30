@@ -91,11 +91,11 @@ def data_link_layer(socket_):
 # # # Initialize host and port
 # host = "10.0.0.1"
 host=sys.argv[1]  # server IP (127.0.0.1)
-port =sys.argv[2] # port
+port =int(sys.argv[2]) # port
 
 # # Create Server Socket (listener) 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.settimeout(0.1)
+# s.settimeout(0.1)
 
 # # # Bind to port
 s.bind((host, port))
@@ -105,19 +105,29 @@ s.listen(2)
 
 # Accept connection
 clientsocket, address = s.accept()
-  
 
 thread1 = Thread( target=network_layer, args=() )
-thread2 = Thread( target=physical_link_layer, args=(clientsocket) )
+thread2 = Thread( target=physical_link_layer, args=(clientsocket,) )
 thread3 = Thread( target=timeout_counter, args=() )
-thread4 = Thread( target=data_link_layer, args=(clientsocket) )
+thread4 = Thread( target=data_link_layer, args=(clientsocket,) )
+
+thread1.daemon=True
+thread2.daemon=True
+thread3.daemon=True
+thread4.daemon=True
+
 
 thread1.start()
 thread2.start()
 thread3.start()
 thread4.start()
 
-thread1.join()
-thread2.join()
-thread3.join()
-thread4.join()
+# thread1.join()
+# thread2.join()
+# thread3.join()
+# thread4.join()
+
+
+
+while True:
+    time.sleep(1)
