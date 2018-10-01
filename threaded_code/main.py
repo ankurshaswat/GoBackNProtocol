@@ -11,8 +11,10 @@ from threading import Thread
 import random
 
 BANDWIDTH = 1
-DELAY = str(random.randint(0,5))+'ms'
-print('Delay set to '+DELAY)
+DELAY='0ms'
+LOSS=2
+# DELAY = str(random.randint(0,5))+'ms'
+# print('Delay set to '+DELAY)
 
 class LinearTopo(Topo):
 
@@ -30,7 +32,7 @@ class LinearTopo(Topo):
         switch2 = self.addSwitch('s2')
         self.addLink(host1, switch1)
         self.addLink(host2, switch2)
-        self.addLink(switch1, switch2, bw=BANDWIDTH, delay=DELAY)
+        self.addLink(switch1, switch2, bw=BANDWIDTH, delay=DELAY, loss=LOSS)
         self.addLink(switch1,switch2)
 
 def init_client1(hosts):

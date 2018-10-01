@@ -5,7 +5,7 @@ import sys
 import random
 from threading import Thread
 import random
-
+import datetime
 
 class Frame:
     def __init__(self, type, num, data):
@@ -91,11 +91,13 @@ def physical_link_layer(socket_):
                     sending = Frame('ACK', packetExpected, None)
                     print('Sending packet (from physical link layer) - ' +
                           sending.toString()+'\n')
+                    dt = datetime.datetime.now()
+                    print(dt.second*1000000 + dt.microsecond)
                     socket_.send(sending.toString())
-                    if(packetExpected == 400):
-                        print('Time for 400 packets- ' +
-                              str(time.time()-START_TIME)+'\n')
-                        print('Total Packets Received Till Now - '+packetsReceived+'\n')
+                    # if(packetExpected == 100):
+                        # print('Time for 100 packets- ' +
+                            #   str(time.time()-START_TIME)+'\n')
+                        # print('Total Packets Received Till Now - '+packetsReceived+'\n')
                     packetExpected += 1
                 elif(packetExpected != 0):
                     sending = Frame('ACK', packetExpected-1, None)
@@ -145,6 +147,7 @@ def data_link_layer(socket_):
 
     windowSize = 7
     packet_to_send = 0
+    flag=False
 
     while 1:
         if not data.empty() and packet_to_send < lastAckReceived + 1 + windowSize and (packet_to_send - lastAckReceived - 1) < data.qsize():
@@ -152,7 +155,11 @@ def data_link_layer(socket_):
             data_to_send = data_copy[packet_to_send - lastAckReceived - 1]
             packet = Frame('DATA', packet_to_send, data_to_send)
             print('Sending packet (from network layer ready) - ' +
-                  packet.toString() + '\n')
+                  packet.toString() +'\n')
+            print('Lastack-',lastAckReceived)
+            print('PacketsSent-',packetsSent)
+            dt = datetime.datetime.now()
+            print(dt.second*1000000 + dt.microsecond)            
             socket_.send(packet.toString())
             packetsSent += 1
 
@@ -161,8 +168,9 @@ def data_link_layer(socket_):
             # to_send = data.get()
 
         while not acks.empty():
-            if(lastAckReceived == 400):
-                print('Packets Sent to get this Ack - '+packetsSent+'\n')
+            # if(lastAckReceived == 100 and not flag):
+                # print('Packets Sent to get this Ack - '+packetsSent+'\n')
+                # flag=True
             ack_num = acks.get()
             while (lastAckReceived < int(ack_num)):
                 dat = data.get()
@@ -180,6 +188,7 @@ def data_link_layer(socket_):
                 packet = Frame('DATA', lastAckReceived+1+i, data_to_send)
                 print('Sending Packet (timeout) - ' + packet.toString() + '\n')
                 socket_.send(packet.toString())
+                packetsSent+=1
             timer_start = time.time()
 
         if(packetExpected == total_packets_receive and lastAckReceived == total_packets_send - 1):
